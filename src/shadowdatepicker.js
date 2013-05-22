@@ -133,19 +133,164 @@
 	}
 
 	// 绑定事件
-	function bindEvent(shadowRoot){
+	function bindEvent(shadowRoot,shadowRootDiv,input){
 
-		var allA = shadowRoot.querySelectorAll('a');
 
-		Array.prototype.forEach.call(allA,function(a){
 
-			a.addEventListener('click',function(){
+		shadowRoot.querySelector('.premonth').addEventListener('click',function(e){
 
-				alert(this.innerText);
+			var currYear = shadowRoot.querySelector('.year').innerText - 0;
+			var currMonth = shadowRoot.querySelector('.month').innerText - 0;
 
-			},false);
+			showMonth(shadowRoot,currYear,currMonth-1);
+
+			e.stopPropagation();
+
+		},false);
+
+		shadowRoot.querySelector('.nextmonth').addEventListener('click',function(e){
+
+			var currYear = shadowRoot.querySelector('.year').innerText - 0;
+			var currMonth = shadowRoot.querySelector('.month').innerText - 0;
+
+			showMonth(shadowRoot,currYear,currMonth+1);
+
+			e.stopPropagation();
+
+		},false);
+
+		shadowRoot.querySelector('tbody').addEventListener('click',function(e){
+
+			var currYear = shadowRoot.querySelector('.year').innerText - 0;
+			var currMonth = shadowRoot.querySelector('.month').innerText - 0;
+			if(e.target.tagName.toLowerCase() === 'td'){
+
+				var targetDate = new Date(currYear,currMonth-1,e.target.getAttribute('data-value')-0);
+				input.value = targetDate.getFullYear() + '-' + 
+								(targetDate.getMonth() < 9 ? '0':'') + (targetDate.getMonth()+1) + '-' +
+								(targetDate.getDate() <= 9 ? '0':'') + targetDate.getDate();
+
+				shadowRootDiv.style.display = 'none';
+
+			}
+
+			e.stopPropagation();
+
+		},false);
+
+		input.addEventListener('focus',function(e){
+
+			shadowRootDiv.style.display = '';
 
 		});
+
+		input.addEventListener('click',function(e){
+
+			e.stopPropagation();
+
+		});
+
+		document.body.addEventListener('click',function(){
+
+			shadowRootDiv.style.display = 'none';
+
+		});
+
+	}
+
+	// 显示指定月份
+	function showMonth(shadowRoot,year,month){
+
+		console.log(year,month);
+
+		var today = new Date(),
+			firstDay,lastDay,
+			lastDayOfLastMonth,
+			firstValInTable,
+			weekOfFirstDay,
+			rowCount,
+			tempHtml='',
+			originalDate;
+
+		originalDate = today;
+
+		if(typeof year === 'undefined'){
+			year = today.getFullYear();
+		}
+		if(typeof month === 'undefined'){
+			month = today.getMonth()+1;
+		}
+
+		firstDay = new Date(year,month-1,1);
+		lastDay = new Date(year,month,0);
+		lastDayOfLastMonth = new Date(year,month-1,0).getDate();
+
+		year = firstDay.getFullYear();
+		month = firstDay.getMonth()+1;
+
+		//获取当月第一天是周几
+		weekOfFirstDay = firstDay.getDay();
+
+		//如果是周日，设为第7天
+		if(weekOfFirstDay === 0){
+			weekOfFirstDay = 7;
+		}
+
+		// lastDay-firstDay后+1才是一个月的天数
+		// 但因为weekOfFirstDay要-1才对，所以这里不加不减
+		rowCount = Math.ceil(((lastDay - firstDay)/1000/3600/24 + weekOfFirstDay)/7);
+
+		firstValInTable = -weekOfFirstDay + 2;
+
+		//填充日期
+		for(var i=0;i<rowCount;i++){
+
+			tempHtml += '<tr>';
+
+				for(var j=0;j<7;j++){
+
+					var day = firstValInTable + 7*i +j,
+						showDay = day,
+						weekendClass,monthClass,todayClass;
+
+					if(month === originalDate.getMonth()+1 && day === originalDate.getDate()){
+						todayClass = 'current';
+					}else{
+						todayClass = '';
+					}
+
+					if(j === 7-1){
+						weekendClass = 'sunday';
+					}else if(j === 6-1){
+						weekendClass = 'saturday';
+					}else{
+						weekendClass = '';
+					}
+
+					if(day <= 0){
+						//上月的日期
+						showDay = day + lastDayOfLastMonth;
+						monthClass = 'premonth';
+					}else if(day > lastDay.getDate()){
+						//下月的日期
+						showDay = day - lastDay.getDate();
+						monthClass = 'nextmonth';
+					}else{
+						//本月的日期
+						monthClass = '';
+					}
+
+					tempHtml += '<td tabindex="0" class="'+todayClass+' '+weekendClass+' '+monthClass+'" data-value="'+day+'">'+showDay+'</td>';
+
+				}
+
+			tempHtml += '</tr>';
+
+		}
+
+		shadowRoot.querySelector('.year').innerText = year;
+		shadowRoot.querySelector('.month').innerText = month;
+		shadowRoot.querySelector('tbody').innerHTML = tempHtml;
 
 	}
 
@@ -153,7 +298,7 @@
 	function shadowDatePicker(input){
 
 		// 隐藏原输入框
-		input.style.display = 'none';
+		// input.style.display = 'none';
 
 		// 创建shadowRoot
 		var shadowRootDiv = document.createElement('div');
@@ -164,9 +309,13 @@
 		shadowRoot.innerHTML = getDatePickerHTML();
 		shadowRoot.appendChild(getScopedStyle());
 
-		// 绑定事件
-		bindEvent(shadowRoot);
+		shadowRootDiv.style.display = 'none';
 
+		// 绑定事件
+		bindEvent(shadowRoot,shadowRootDiv,input);
+
+		// 初始化
+		showMonth(shadowRoot);
 
 		// shadowRoot.webkitPseudo = 'shadowdatepicker';
 
