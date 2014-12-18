@@ -5,4 +5,4 @@ shadowDatePicker
 
 ## 体验地址
 
-<http://www.toobug.net/shadowDatePicker/test/index.html>
+<http://www.toobug.net/shadowDatePicker/example.html>
