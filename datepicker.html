@@ -1,0 +1,332 @@
+<template>
+	<style type="text/css">
+	.datepicker {
+		outline: none;
+		border: 0 none;
+		width: 100%;
+		padding: 0 8px;
+		line-height: 42px;
+		-webkit-box-sizing: border-box;
+		box-sizing: bordr-box;
+		font-size: 16px;
+		box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+	}
+	.date-table {
+		display: none;
+		width: 266px;
+		text-align: center;
+		margin-top: 3px;
+		box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+		position: absolute;
+		z-index: 100;
+		border-radius: 3px;
+		background-color: #ffffff;
+	}
+	.date-table table {
+		margin: auto;
+		border-collapse: collapse;
+		border-spacing: 0;
+		position: relative;
+		border-radius: 3px;
+		line-height: 36px;
+		font-size: 14px;
+	}
+	.date-table caption {
+		height: 42px;
+		line-height: 40px;
+		background-color: #D05F63;
+		background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #D05F63), color-stop(1, #C54D51));
+		font-size: 16px;
+		border-radius: 3px 3px 0 0;
+		color: #ffffff;
+	}
+	.date-table .date {
+		padding: 0 12px;
+		line-height: 40px;
+	}
+	.date-table caption span {
+		margin: 0 6px;
+		font-size: 18px;
+		cursor: pointer;
+	}
+	.date-table a.prevmonth, .date-table a.nextmonth {
+		position: absolute;
+		font-size: 0;
+		width: 0;
+		height: 0;
+		border-style: solid;
+		border-width: 8px;
+		top: 13px;
+	}
+	.date-table a.prevmonth {
+		border-color: transparent #ffffff transparent transparent;
+		left: 2px;
+	}
+	.date-table a.nextmonth {
+		border-color: transparent transparent transparent #ffffff;
+		right: 2px;
+	}
+	.date-table thead tr {
+		border-radius: 1px solid #e0e0e0;
+	}
+	.date-table thead th {
+		background-color: #f0f0f0;
+		width: 36px;
+		height: 36px;
+	}
+	.date-table td {
+		width: 36px;
+		height: 36px;
+		color: #333333;
+		cursor: pointer;
+		box-shadow: inset 0 1px 0 rgba(0,0,0,0.1);
+		background-color: #f7f7f7;
+	}
+	.date-table th.prevmonth, .date-table td.nextmonth {
+		background-color: #eeeeee;
+		color: #a3a3a3;
+		box-shadow: inset 0 1px 0 #eeeeee;
+	}
+	.date-table td.sunday {
+		color: #c94e57;
+	}
+	.date-table td.saturday {
+		color: #b05224;
+	}
+	.date-table td.current {
+		background-color: #737373;
+		color: #ffffff;
+		box-shadow: inset 0 0 5px #333333;
+	}
+	</style>
+	<input class="datepicker"/>
+	<div class="date-table">
+		<table>
+			<caption>
+				<a href="javascript:;" class="prevmonth">上一月</a>
+				<div class="date">
+					<span class="year">2014</span>-<span class="month">12</span>
+				</div>
+				<a href="javascript:;" class="nextmonth">下一月</a>
+			</caption>
+			<colgroup>
+				<col>
+				<col>
+				<col>
+				<col>
+				<col>
+				<col>
+				<col>
+			</colgroup>
+			<thead>
+				<tr>
+					<th scope="col">一</th>
+					<th scope="col">二</th>
+					<th scope="col">三</th>
+					<th scope="col">四</th>
+					<th scope="col">五</th>
+					<th scope="col">六</th>
+					<th scope="col">日</th>
+				</tr>
+			</thead>
+			<tbody>
+				
+			</tbody>
+		</table>	
+	</div>
+</template>
+
+<script type="text/javascript">
+var owner = document.currentScript.ownerDocument
+var template = owner.querySelector('template')
+var templateContent = templateContent
+
+var proto = Object.create(HTMLInputElement.prototype)
+
+proto.createdCallback = function() {
+	var root = this.createShadowRoot()
+	root.appendChild(document.importNode(template.content, true))
+
+	root.querySelector('.datepicker').value = this.value
+
+	var calendar = root.querySelector('.date-table')
+	var shadowInput = root.querySelector('.datepicker')
+
+	shadowDatePicker(root, calendar, this, shadowInput)
+	
+}
+
+document.registerElement('shadow-datepicker', {
+	extends: 'input',
+	prototype: proto
+})
+
+function bindEvent(shadowRoot, shadowCalendar, input, shadowInput) {
+
+	shadowRoot.querySelector('.prevmonth').addEventListener('click', function(event) {
+
+		event.stopPropagation()
+
+		var currYear = shadowRoot.querySelector('.year').innerText - 0
+		var currMonth = shadowRoot.querySelector('.month').innerText - 0
+
+		showMonth(shadowRoot, currYear, currMonth - 1)
+
+
+	}, false)
+
+	shadowRoot.querySelector('.nextmonth').addEventListener('click', function(event) {
+
+		event.stopPropagation()
+
+		var currYear = shadowRoot.querySelector('.year').innerText - 0
+		var currMonth = shadowRoot.querySelector('.month').innerText - 0
+
+		showMonth(shadowRoot, currYear, currMonth + 1)
+
+	}, false)
+
+	shadowRoot.querySelector('tbody').addEventListener('click', function(event) {
+
+		event.stopPropagation()
+
+		var currYear = shadowRoot.querySelector('.year').innerText - 0
+		var currMonth = shadowRoot.querySelector('.month').innerText - 0
+
+		var target = event.target
+		var targetDate = ''
+		var selectedDateStr = ''
+
+		if(target.tagName.toLowerCase() === 'td') {
+
+			targetDate = new Date(currYear, currMonth - 1, target.getAttribute('data-value') - 0)
+
+			selectedDateStr = targetDate.getFullYear() + '-' + (targetDate.getMonth() < 9 ? '0':'') + (targetDate.getMonth()+1) + '-' + (targetDate.getDate() <= 9 ? '0':'') + targetDate.getDate()
+
+			input.value = shadowInput.value = selectedDateStr
+
+			shadowCalendar.style.display = 'none'
+
+		}
+
+	}, false)
+
+	shadowInput.addEventListener('change', function(event) {
+
+		input.value = shadowInput.value.trim()
+
+	}, false)
+
+	shadowInput.addEventListener('focus', function(event) {
+
+		shadowCalendar.style.display = 'block'
+
+	}, false)
+
+	shadowInput.addEventListener('click', function(event) {
+		event.stopPropagation()
+	}, false)
+
+	document.body.addEventListener('click', function() {
+		shadowCalendar.style.display = 'none'
+	}, false)
+
+}
+
+function showMonth(shadowRoot, year, month) {
+
+	var today = new Date(),
+		firstDay,
+		lastDay,
+		lastDayOfLastMonth,
+		firstValInTable,
+		weekOfFirstDay,
+		rowCount,
+		tempHTML = '',
+		originalDate
+
+	originalDate = today
+
+	if(typeof year === 'undefined') {
+		year = today.getFullYear()
+	}
+	if(typeof month === 'undefined') {
+		month = today.getMonth() + 1
+	}
+
+	firstDay = new Date(year, month-1, 1)
+	lastDay = new Date(year, month, 0)
+	lastDayOfLastMonth = new Date(year, month-1, 0).getDate()
+
+	year = firstDay.getFullYear()
+	month = firstDay.getMonth() + 1
+
+	weekOfFirstDay = firstDay.getDay()
+
+	if(weekOfFirstDay === 0) {
+		weekOfFirstDay = 7
+	}
+
+	rowCount = Math.ceil(((lastDay - firstDay)/1000/3600/24 +weekOfFirstDay)/7)
+
+	firstValInTable = -weekOfFirstDay + 2
+
+	for(var i = 0; i < rowCount; i++) {
+
+		tempHTML += '<tr>'
+
+		for(var j = 0; j < 7; j++) {
+
+			var day = firstValInTable + 7 * i + j,
+				showDay = day,
+				weekendClass,
+				monthClass,
+				rodayClass
+
+			if(month === originalDate.getMonth() + 1 && day === originalDate.getDate()) {
+				todayClass = 'current'
+			} else {
+				todayClass = ''
+			}
+
+			if(j === 7-1){
+				weekendClass = 'sunday'
+			} else if (j === 6-1) {
+				weekendClass = 'saturday'
+			} else {
+				weekendClass = ''
+			}
+
+			if(day <= 0) {
+				showDay = day + lastDayOfLastMonth
+				monthClass = 'prevmonth'
+			} else if (day > lastDay.getDate()) {
+				showDay = day - lastDay.getDate()
+				monthClass = 'nextmonth'
+			} else {
+				monthClass = ''
+			}
+
+			tempHTML += '<td tabindex="0" class="'+todayClass+' '+weekendClass+' '+monthClass+'" data-value="'+day+'">'+showDay+'</td>'
+
+		}
+
+		tempHTML += '</tr>'
+
+	}
+
+	shadowRoot.querySelector('.year').innerText = year
+	shadowRoot.querySelector('.month').innerText = month
+	shadowRoot.querySelector('tbody').innerHTML = tempHTML
+
+}
+
+function shadowDatePicker(shadowRoot, shadowCalendar, input, shadowInput) {
+
+	shadowCalendar.style.display = 'none'
+
+	bindEvent(shadowRoot, shadowCalendar, input, shadowInput)
+
+	showMonth(shadowRoot)
+}
+</script>
